@@ -221,8 +221,9 @@ elseif ($e->name == 'OnWebPagePrerender')
          }
 
          // Replace container links
-         foreach ($modx->documentListing as $id)
+         foreach ($modx->aliasListing as $v)
          {
+            $id = $v['id'];
             if ((is_array($isfolder_arr) && isset($isfolder_arr[$id])) || count($modx->getChildIds($id, 1)))
             {
                $overrideAlias = $modx->aliasListing[$id]['alias'];
