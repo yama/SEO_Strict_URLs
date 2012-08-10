@@ -5,7 +5,7 @@
  * Enforces the use of strict URLs to prevent duplicate content.
  *
  * @category	plugin
- * @version		1.0.1P2
+ * @version		1.0.1
  * @license		http://www.gnu.org/copyleft/gpl.html GNU Public License (GPL)
  * @author		Jeremy Luebke, Phize
  * @internal	@properties &editDocLinks=Edit document links;int;1 &makeFolders=Rewrite containers as folders;int;1 &emptyFolders=Check for empty container	when rewriting;int;1 &override=Enable manual overrides;int;0 &overrideTV=Override TV name;string;seoOverride;
@@ -53,6 +53,7 @@ if ($e->name == 'OnWebPageInit')
       $parameters = $matches[1];
       //
 
+      if (method_exists($modx, 'setAliasListing')) $modx->setAliasListing();
       $alias = $modx->aliasListing[$documentIdentifier]['alias'];
       if ($makeFolders)
       {
@@ -221,8 +222,9 @@ elseif ($e->name == 'OnWebPagePrerender')
          }
 
          // Replace container links
-         foreach ($modx->documentListing as $id)
+         foreach ($modx->aliasListing as $v)
          {
+            $id = $v['id'];
             if ((is_array($isfolder_arr) && isset($isfolder_arr[$id])) || count($modx->getChildIds($id, 1)))
             {
                $overrideAlias = $modx->aliasListing[$id]['alias'];
