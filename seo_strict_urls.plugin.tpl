@@ -53,6 +53,7 @@ if ($e->name == 'OnWebPageInit')
       $parameters = $matches[1];
       //
 
+      if (method_exists($modx, 'setAliasListing')) $modx->setAliasListing();
       $alias = $modx->aliasListing[$documentIdentifier]['alias'];
       if ($makeFolders)
       {
