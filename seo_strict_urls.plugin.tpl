@@ -36,8 +36,13 @@
 // Some codes are added/modified by Phize(http://phize.net)
 
 // Begin plugin code
-$e = &$modx->event;
 
+$tbl_site_tmplvar_templates     = $modx->getFullTableName('site_tmplvar_templates');
+$tbl_site_tmplvar_contentvalues = $modx->getFullTableName('site_tmplvar_contentvalues');
+$tbl_site_tmplvars              = $modx->getFullTableName('site_tmplvars');
+$tbl_site_content               = $modx->getFullTableName('site_content');
+
+$e = &$modx->event;
 if ($e->name == 'OnWebPageInit')
 {
    $documentIdentifier = $modx->documentIdentifier;
@@ -59,7 +64,7 @@ if ($e->name == 'OnWebPageInit')
       {
          if ($emptyFolders)
          {
-            $result = $modx->db->select('isfolder', $modx->getFullTableName('site_content'), 'id = ' . $documentIdentifier);
+            $result = $modx->db->select('isfolder', $tbl_site_content, "id='{$documentIdentifier}'");
             $isfolder = $modx->db->getValue($result);
          }
          else
@@ -186,16 +191,17 @@ elseif ($e->name == 'OnWebPagePrerender')
       if ($override)
       {
          // Replace manual override links
-         $sql = "SELECT tvc.contentid as id, tvc.value as value FROM " . $modx->getFullTableName('site_tmplvars') . " tv ";
-         $sql .= "INNER JOIN " . $modx->getFullTableName('site_tmplvar_templates') . " tvtpl ON tvtpl.tmplvarid = tv.id ";
-         $sql .= "LEFT JOIN " . $modx->getFullTableName('site_tmplvar_contentvalues') . " tvc ON tvc.tmplvarid = tv.id ";
-         $sql .= "LEFT JOIN " . $modx->getFullTableName('site_content') . " sc ON sc.id = tvc.contentid ";
-         $sql .= "WHERE sc.published = 1 AND tvtpl.templateid = sc.template AND tv.name = '$overrideTV'";
-         $results = $modx->dbQuery($sql);
-         while ($row = $modx->fetchRow($results))
+         $f = "tvc.contentid as id, tvc.value as value";
+         $from  = "{$tbl_site_tmplvars} tv";
+         $from .= " INNER JOIN {$tbl_site_tmplvar_templates} tvtpl ON tvtpl.tmplvarid = tv.id ";
+         $from .= " LEFT JOIN {$tbl_site_tmplvar_contentvalues} tvc ON tvc.tmplvarid = tv.id ";
+         $from .= " LEFT JOIN {$tbl_site_content} sc ON sc.id = tvc.contentid ";
+         $where .= "sc.published = 1 AND tvtpl.templateid = sc.template AND tv.name = '{$overrideTV}'";
+         $rs = $modx->db->select($f,$from,$where);
+         while ($row = $modx->db->getRow($rs))
          {
             $overrideAlias = $modx->aliasListing[$row['id']]['alias'];
-            $overridePath = $modx->aliasListing[$row['id']]['path'];
+            $overridePath  = $modx->aliasListing[$row['id']]['path'];
             switch ($row['value'])
             {
                case 0:
@@ -216,7 +222,7 @@ elseif ($e->name == 'OnWebPagePrerender')
          {
             // Populate isfolder array
             $isfolder_arr = array();
-            $result = $modx->db->select('id', $modx->getFullTableName('site_content'), 'published > 0 AND isfolder > 0');
+            $result = $modx->db->select('id', $tbl_site_content, 'published > 0 AND isfolder > 0');
             while ($row = $modx->db->getRow($result))
                $isfolder_arr[$row['id']] = true;
          }
