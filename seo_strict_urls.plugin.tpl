@@ -191,6 +191,7 @@ elseif ($e->name == 'OnWebPagePrerender')
       if ($override)
       {
          // Replace manual override links
+         $overrideTV = $modx->db->escape($overrideTV);
          $f = "tvc.contentid as id, tvc.value as value";
          $from  = "{$tbl_site_tmplvars} tv";
          $from .= " INNER JOIN {$tbl_site_tmplvar_templates} tvtpl ON tvtpl.tmplvarid = tv.id ";
