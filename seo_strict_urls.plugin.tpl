@@ -120,25 +120,12 @@ if ($e->name == 'OnWebPageInit')
             $qstring = preg_replace("#(^|&)(q|id)=[^&]+#", '', $parts[1]);  // Strip conflicting id/q from query string
 
             // Modified by Phize
-            if ($qstring && $parameters)
-            {
-               header('Location: ' . $modx->config['site_url'] . '?' . $qstring . '&' . $parameters);
-            }
-            else if ($qstring)
-            {
-               header('Location: ' . $modx->config['site_url'] . '?' . $qstring);
-            }
-            else if ($parameters)
-            {
-               header('Location: ' . $modx->config['site_url'] . '?' . $parameters);
-            }
-            else
-            {
-               header('Location: ' . $modx->config['site_url']);
-            }
-            //
-//            if ($qstring) header('Location: ' . $modx->config['site_url'] . '?' . $qstring);
-//            else header('Location: ' . $modx->config['site_url']);
+            $site_url = $modx->config['site_url'];
+            if($qstring && $parameters) $dist = "{$site_url}?{$qstring}&{$parameters}";
+            elseif($qstring)            $dist = "{$site_url}?{$qstring}";
+            elseif($parameters)         $dist = "{$site_url}?{$parameters}";
+            else                        $dist = $site_url;
+            header("Location: {$dist}");
             exit(0);
          }
       }
@@ -149,25 +136,11 @@ if ($e->name == 'OnWebPageInit')
          $qstring = preg_replace("#(^|&)(q|id)=[^&]+#", '', $parts[1]);  // Strip conflicting id/q from query string
 
          // Modified by Phize
-         if ($qstring && $parameters)
-         {
-            header('Location: ' . $strictURL . '?' . $qstring . '&' . $parameters);
-         }
-         else if ($qstring)
-         {
-            header('Location: ' . $strictURL . '?' . $qstring);
-         }
-         else if ($parameters)
-         {
-            header('Location: ' . $strictURL . '?' . $parameters);
-         }
-         else
-         {
-            header('Location: ' . $strictURL);
-         }
-         //
-//         if ($qstring) header('Location: ' . $strictURL . '?' . $qstring);
-//         else header('Location: ' . $strictURL);
+         if($qstring && $parameters) $dist = "{$strictURL}?{$qstring}&{$parameters}";
+         elseif($qstring)            $dist = "{$strictURL}?{$qstring}";
+         elseif($parameters)         $dist = "{$strictURL}?{$parameters}";
+         else                        $dist = $strictURL;
+         header("Location: {$dist}");
          exit(0);
       }
    }
@@ -186,7 +159,6 @@ elseif ($e->name == 'OnWebPagePrerender')
       $overridePath = $modx->aliasListing[$modx->config['site_start']]['path'];
       // Modified by Phize
       $o = preg_replace("#((href|action)=\"|$myDomain)($baseUrl)?($overridePath/)?$overrideAlias$furlSuffix([^\w-\.!~\*\(\)])#", '${1}' . $baseUrl . '${5}', $o);
-      // $o = preg_replace("#((href|action)=\"|$myDomain)($baseUrl)?($overridePath/)?$overrideAlias$furlSuffix#", '${1}' . $baseUrl, $o);
 
       if ($override)
       {
@@ -203,15 +175,17 @@ elseif ($e->name == 'OnWebPagePrerender')
          {
             $overrideAlias = $modx->aliasListing[$row['id']]['alias'];
             $overridePath  = $modx->aliasListing[$row['id']]['path'];
+            $path = "{$myDomain}{$baseUrl}{$overridePath}";
+            $page = "{$overrideAlias}{$furlSuffix}";
             switch ($row['value'])
             {
                case 0:
                   // Modified by Phize
-                  $o = preg_replace("#((href|action)=[\"']($baseUrl)?($overridePath/)?|$myDomain$baseUrl$overridePath/?)$overrideAlias$furlSuffix([^\w-\.!~\*\(\)])#", '${1}' . $overrideAlias . '${5}', $o);
+                  $o = preg_replace("#((href|action)=[\"']($baseUrl)?($overridePath/)?|$path/?)$page([^\w-\.!~\*\(\)])#", '${1}' . $overrideAlias . '${5}', $o);
                   break;
                case 2:
                   // Modified by Phize
-                  $o = preg_replace("#((href|action)=[\"']($baseUrl)?($overridePath/)?|$myDomain$baseUrl$overridePath/?)$overrideAlias$furlSuffix(/|([^\w-\.!~\*\(\)]))#", '${1}' . rtrim($overrideAlias, '/') . '/' . '${6}', $o);
+                  $o = preg_replace("#((href|action)=[\"']($baseUrl)?($overridePath/)?|$path/?)$page(/|([^\w-\.!~\*\(\)]))#", '${1}' . rtrim($overrideAlias, '/') . '/' . '${6}', $o);
                   break;
             }
          }
@@ -235,11 +209,14 @@ elseif ($e->name == 'OnWebPagePrerender')
             if ((is_array($isfolder_arr) && isset($isfolder_arr[$id])) || count($modx->getChildIds($id, 1)))
             {
                $overrideAlias = $modx->aliasListing[$id]['alias'];
-               $overridePath = $modx->aliasListing[$id]['path'];
+               $overridePath  = $modx->aliasListing[$id]['path'];
                // Modified by Phize
-               $o = preg_replace("#((href|action)=[\"']($baseUrl)?($overridePath/)?|$myDomain$baseUrl$overridePath/?)$overrideAlias$furlSuffix(/|([^\w-\.!~\*\(\)]))#", '${1}' . rtrim($overrideAlias, '/') . '/' . '${6}', $o);
+               $path = "{$myDomain}{$baseUrl}{$overridePath}";
+               $page = "{$overrideAlias}{$furlSuffix}";
+               $o = preg_replace("#((href|action)=[\"']($baseUrl)?($overridePath/)?|$path/?)$page(/|([^\w-\.!~\*\(\)]))#", '${1}' . rtrim($overrideAlias, '/') . '/' . '${6}', $o);
             }
          }
       }
    }
 }
+else return;
