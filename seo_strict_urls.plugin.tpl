@@ -36,7 +36,7 @@
 // Some codes are added/modified by Phize(http://phize.net)
 
 // Begin plugin code
-
+if(!defined('IN_PARSER_MODE')) return;
 $tbl_site_tmplvar_templates     = $modx->getFullTableName('site_tmplvar_templates');
 $tbl_site_tmplvar_contentvalues = $modx->getFullTableName('site_tmplvar_contentvalues');
 $tbl_site_tmplvars              = $modx->getFullTableName('site_tmplvars');
