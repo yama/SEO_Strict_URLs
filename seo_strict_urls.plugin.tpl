@@ -41,7 +41,7 @@ $tbl_site_tmplvar_contentvalues = $modx->getFullTableName('site_tmplvar_contentv
 $tbl_site_tmplvar_templates     = $modx->getFullTableName('site_tmplvar_templates');
 $tbl_site_tmplvars              = $modx->getFullTableName('site_tmplvars');
 
-if ($modx->event->name == 'OnWebPageInit')
+if ($modx->event->name === 'OnWebPageInit')
 {
 	$docid = $modx->documentIdentifier;
 	
@@ -131,7 +131,7 @@ if ($modx->event->name == 'OnWebPageInit')
 		}
 	}
 }
-elseif ($modx->event->name == 'OnWebPagePrerender')
+elseif ($modx->event->name === 'OnWebPagePrerender')
 {
 	if ($editDocLinks)
 	{
