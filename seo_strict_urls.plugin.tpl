@@ -175,30 +175,29 @@ elseif ($modx->event->name === 'OnWebPagePrerender')
 		}
 	}
 	
-	if ($makeFolders)
+	if (!$makeFolders) return;
+	
+	if ($emptyFolders)
 	{
-		if ($emptyFolders)
+		// Populate isfolder array
+		$isfolder_arr = array();
+		$result = $modx->db->select('id', $tbl_site_content, 'published > 0 AND isfolder > 0');
+		while ($row = $modx->db->getRow($result))
 		{
-			// Populate isfolder array
-			$isfolder_arr = array();
-			$result = $modx->db->select('id', $tbl_site_content, 'published > 0 AND isfolder > 0');
-			while ($row = $modx->db->getRow($result))
-			{
-				$isfolder_arr[$row['id']] = true;
-			}
+			$isfolder_arr[$row['id']] = true;
 		}
-		
-		// Replace container links
-		foreach ($modx->aliasListing as $v)
+	}
+	
+	// Replace container links
+	foreach ($modx->aliasListing as $v)
+	{
+		$id = $v['id'];
+		if ((is_array($isfolder_arr) && isset($isfolder_arr[$id])) || count($modx->getChildIds($id, 1)))
 		{
-			$id = $v['id'];
-			if ((is_array($isfolder_arr) && isset($isfolder_arr[$id])) || count($modx->getChildIds($id, 1)))
-			{
-				$overrideAlias = $modx->aliasListing[$id]['alias'];
-				$overridePath = $modx->aliasListing[$id]['path'];
-				// Modified by Phize
-				$o = preg_replace("#((href|action)=[\"']($baseUrl)?($overridePath/)?|$myDomain$baseUrl$overridePath/?)$overrideAlias$furlSuffix(/|([^\w-\.!~\*\(\)]))#", '${1}' . rtrim($overrideAlias, '/') . '/' . '${6}', $o);
-			}
+			$overrideAlias = $modx->aliasListing[$id]['alias'];
+			$overridePath = $modx->aliasListing[$id]['path'];
+			// Modified by Phize
+			$o = preg_replace("#((href|action)=[\"']($baseUrl)?($overridePath/)?|$myDomain$baseUrl$overridePath/?)$overrideAlias$furlSuffix(/|([^\w-\.!~\*\(\)]))#", '${1}' . rtrim($overrideAlias, '/') . '/' . '${6}', $o);
 		}
 	}
 }
