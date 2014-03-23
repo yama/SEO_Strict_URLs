@@ -5,7 +5,7 @@
  * Enforces the use of strict URLs to prevent duplicate content.
  *
  * @category	plugin
- * @version		1.0.1P4
+ * @version		1.0.5
  * @license		http://www.gnu.org/copyleft/gpl.html GNU Public License (GPL)
  * @author		Jeremy Luebke, Phize
  * @internal	@properties &editDocLinks=Edit document links;int;1 &makeFolders=Rewrite containers as folders;int;1 &emptyFolders=Check for empty container	when rewriting;int;1 &override=Enable manual overrides;int;0 &overrideTV=Override TV name;string;seoOverride;
