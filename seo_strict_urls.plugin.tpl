@@ -122,7 +122,7 @@ if ($modx->event->name == 'OnWebPageInit')
 			
 		}
 		
-		if(isset($url))
+		if(isset($url)&&$requestedURL!==$url)
 		{
 			header("HTTP/1.1 301 Moved Permanently");
 			header("Location: {$url}");
