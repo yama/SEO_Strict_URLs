@@ -87,7 +87,8 @@ if ($modx->event->name == 'OnWebPageInit')
 		$alias = $modx->aliasListing[$docid]['alias'];
 		$relurl = $modx->makeUrl($docid);
 		if ($isoverride)                   $strictURL = preg_replace('/[^\/]+$/', $alias, $relurl);
-		elseif ($isfolder && $makeFolders) $strictURL = preg_replace('/[^\/]+$/', $alias, $relurl) . '/';
+		elseif ($isfolder && $makeFolders && substr($relurl,-1)!=='/')
+		                                   $strictURL = preg_replace('/[^\/]+$/', $alias, $relurl) . '/';
 		else                               $strictURL = $relurl;
 		
 		$myProtocol = ($_SERVER['HTTPS'] == 'on') ? 'https' : 'http';
