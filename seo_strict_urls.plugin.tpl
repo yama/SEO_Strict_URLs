@@ -86,9 +86,9 @@ if ($modx->event->name == 'OnWebPageInit')
 		if (method_exists($modx, 'setAliasListing')) $modx->setAliasListing();
 		$alias = $modx->aliasListing[$docid]['alias'];
 		$relurl = $modx->makeUrl($docid,'','','full');
-		if ($isoverride)                   $strictURL = preg_replace('/[^\/]+$/', $alias, $relurl);
+		if ($isoverride)                   $strictURL = preg_replace('@[^/]+$@', $alias, $relurl);
 		elseif ($isfolder && $makeFolders && substr($relurl,-1)!=='/')
-		                                   $strictURL = preg_replace('/[^\/]+$/', $alias, $relurl) . '/';
+		                                   $strictURL = preg_replace('@[^/]+$@', $alias, $relurl) . '/';
 		else                               $strictURL = $relurl;
 		
 		$myProtocol = ($_SERVER['HTTPS'] == 'on') ? 'https' : 'http';
