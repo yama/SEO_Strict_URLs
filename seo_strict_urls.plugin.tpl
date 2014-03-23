@@ -43,92 +43,91 @@ $tbl_site_tmplvars              = $modx->getFullTableName('site_tmplvars');
 
 if ($modx->event->name === 'OnWebPageInit')
 {
+	if(!isset($modx->documentIdentifier)||empty($modx->documentIdentifier)) return;
+	
 	$docid = $modx->documentIdentifier;
 	
-	if ($docid)  // Check for 404 error
+	$parts = explode('?', $_SERVER['REQUEST_URI']);
+	
+	// Added by Phize
+	preg_match('#^.+?(?<!\?)&(.*?)(?:\?.*)?$#', $_SERVER['REQUEST_URI'], $matches);
+	$parameters = $matches[1];
+	//
+	
+	if ($makeFolders)
 	{
-		$parts = explode('?', $_SERVER['REQUEST_URI']);
-		
-		// Added by Phize
-		preg_match('#^.+?(?<!\?)&(.*?)(?:\?.*)?$#', $_SERVER['REQUEST_URI'], $matches);
-		$parameters = $matches[1];
-		//
-		
-		if ($makeFolders)
+		if ($emptyFolders)
 		{
-			if ($emptyFolders)
-			{
-				$result = $modx->db->select('isfolder', $tbl_site_content, "id='{$docid}'");
-				$isfolder = $modx->db->getValue($result);
-			}
-			else
-			{
-				$isfolder = (count($modx->getChildIds($docid, 1)) > 0) ? 1 : 0;
-			}
+			$result = $modx->db->select('isfolder', $tbl_site_content, "id='{$docid}'");
+			$isfolder = $modx->db->getValue($result);
 		}
-		
-		if ($override && $overrideOption = $modx->getTemplateVarOutput($overrideTV, $docid))
+		else
 		{
-			switch ($overrideOption[$overrideTV])
-			{
-				case 0:
-					$isoverride = 1;
-					break;
-				case 1:
-					$isfolder = 0;
-					break;
-				case 2:
-					$makeFolders = 1;
-					$isfolder = 1;
-			}
+			$isfolder = (count($modx->getChildIds($docid, 1)) > 0) ? 1 : 0;
 		}
-		
-		if (method_exists($modx, 'setAliasListing')) $modx->setAliasListing();
-		$alias = $modx->aliasListing[$docid]['alias'];
-		$relurl = $modx->makeUrl($docid,'','','full');
-		if ($isoverride)                   $strictURL = preg_replace('@[^/]+$@', $alias, $relurl);
-		elseif ($isfolder && $makeFolders && substr($relurl,-1)!=='/')
-		                                   $strictURL = preg_replace('@[^/]+$@', $alias, $relurl) . '/';
-		else                               $strictURL = $relurl;
-		
-		$myProtocol = ($_SERVER['HTTPS'] == 'on') ? 'https' : 'http';
-		$myDomain = $myProtocol . '://' . $_SERVER['HTTP_HOST'];
-		$requestedURL = $myDomain . $parts[0];
-		
-		if ($docid == $modx->config['site_start'])
+	}
+	
+	if ($override && $overrideOption = $modx->getTemplateVarOutput($overrideTV, $docid))
+	{
+		switch ($overrideOption[$overrideTV])
 		{
-			$site_url = $modx->config['site_url'];
-			if($requestedURL != $site_url)
-			{
-				// Force redirect of site start
-				$qstring = preg_replace("#(^|&)(q|id)=[^&]+#", '', $parts[1]);  // Strip conflicting id/q from query string
-				
-				// Modified by Phize
-				if ($qstring && $parameters) $url = "{$site_url}?{$qstring}&{$parameters}";
-				elseif($qstring)             $url = "{$site_url}?{$qstring}";
-				elseif($parameters)          $url = "{$site_url}?{$parameters}";
-				else                         $url = $site_url;
-			}
+			case 0:
+				$isoverride = 1;
+				break;
+			case 1:
+				$isfolder = 0;
+				break;
+			case 2:
+				$makeFolders = 1;
+				$isfolder = 1;
 		}
-		elseif ($parts[0] != $strictURL)
+	}
+	
+	if (method_exists($modx, 'setAliasListing')) $modx->setAliasListing();
+	$alias = $modx->aliasListing[$docid]['alias'];
+	$relurl = $modx->makeUrl($docid,'','','full');
+	if ($isoverride)                   $strictURL = preg_replace('@[^/]+$@', $alias, $relurl);
+	elseif ($isfolder && $makeFolders && substr($relurl,-1)!=='/')
+	                                   $strictURL = preg_replace('@[^/]+$@', $alias, $relurl) . '/';
+	else                               $strictURL = $relurl;
+	
+	$myProtocol = ($_SERVER['HTTPS'] == 'on') ? 'https' : 'http';
+	$myDomain = $myProtocol . '://' . $_SERVER['HTTP_HOST'];
+	$requestedURL = $myDomain . $parts[0];
+	
+	if ($docid == $modx->config['site_start'])
+	{
+		$site_url = $modx->config['site_url'];
+		if($requestedURL != $site_url)
 		{
-			// Force page redirect
+			// Force redirect of site start
 			$qstring = preg_replace("#(^|&)(q|id)=[^&]+#", '', $parts[1]);  // Strip conflicting id/q from query string
 			
 			// Modified by Phize
-			if ($qstring && $parameters) $url = "{$strictURL}?{$qstring}&{$parameters}";
-			elseif($qstring)             $url = "{$strictURL}?{$qstring}";
-			elseif($parameters)          $url = "{$strictURL}?{$parameters}";
-			else                         $url = $strictURL;
-			
+			if ($qstring && $parameters) $url = "{$site_url}?{$qstring}&{$parameters}";
+			elseif($qstring)             $url = "{$site_url}?{$qstring}";
+			elseif($parameters)          $url = "{$site_url}?{$parameters}";
+			else                         $url = $site_url;
 		}
+	}
+	elseif ($parts[0] != $strictURL)
+	{
+		// Force page redirect
+		$qstring = preg_replace("#(^|&)(q|id)=[^&]+#", '', $parts[1]);  // Strip conflicting id/q from query string
 		
-		if(isset($url)&&$requestedURL!==$url)
-		{
-			header("HTTP/1.1 301 Moved Permanently");
-			header("Location: {$url}");
-			exit(0);
-		}
+		// Modified by Phize
+		if ($qstring && $parameters) $url = "{$strictURL}?{$qstring}&{$parameters}";
+		elseif($qstring)             $url = "{$strictURL}?{$qstring}";
+		elseif($parameters)          $url = "{$strictURL}?{$parameters}";
+		else                         $url = $strictURL;
+		
+	}
+	
+	if(isset($url)&&$requestedURL!==$url)
+	{
+		header("HTTP/1.1 301 Moved Permanently");
+		header("Location: {$url}");
+		exit(0);
 	}
 }
 elseif ($modx->event->name === 'OnWebPagePrerender')
