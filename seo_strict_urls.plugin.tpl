@@ -85,7 +85,7 @@ if ($modx->event->name == 'OnWebPageInit')
 		
 		if (method_exists($modx, 'setAliasListing')) $modx->setAliasListing();
 		$alias = $modx->aliasListing[$docid]['alias'];
-		$relurl = $modx->makeUrl($docid);
+		$relurl = $modx->makeUrl($docid,'','','full');
 		if ($isoverride)                   $strictURL = preg_replace('/[^\/]+$/', $alias, $relurl);
 		elseif ($isfolder && $makeFolders && substr($relurl,-1)!=='/')
 		                                   $strictURL = preg_replace('/[^\/]+$/', $alias, $relurl) . '/';
