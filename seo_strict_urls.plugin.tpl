@@ -132,73 +132,72 @@ if ($modx->event->name === 'OnWebPageInit')
 }
 elseif ($modx->event->name === 'OnWebPagePrerender')
 {
-	if ($editDocLinks)
+	if (!$editDocLinks) return;
+	
+	$myDomain = $_SERVER['HTTP_HOST'];
+	$furlSuffix = $modx->config['friendly_url_suffix'];
+	$baseUrl = $modx->config['base_url'];
+	$o = &$modx->documentOutput; // get a reference of the output
+	
+	// Reduce site start to base url
+	if (method_exists($modx, 'setAliasListing')) $modx->setAliasListing();
+	if(!is_array($modx->aliasListing)) return;
+	
+	$overrideAlias = $modx->aliasListing[$modx->config['site_start']]['alias'];
+	$overridePath = $modx->aliasListing[$modx->config['site_start']]['path'];
+	// Modified by Phize
+	$o = preg_replace("#((href|action)=\"|$myDomain)($baseUrl)?($overridePath/)?$overrideAlias$furlSuffix([^\w-\.!~\*\(\)])#", '${1}' . $baseUrl . '${5}', $o);
+	
+	if ($override)
 	{
-		$myDomain = $_SERVER['HTTP_HOST'];
-		$furlSuffix = $modx->config['friendly_url_suffix'];
-		$baseUrl = $modx->config['base_url'];
-		$o = &$modx->documentOutput; // get a reference of the output
-		
-		// Reduce site start to base url
-		if (method_exists($modx, 'setAliasListing')) $modx->setAliasListing();
-		if(!is_array($modx->aliasListing)) return;
-		
-		$overrideAlias = $modx->aliasListing[$modx->config['site_start']]['alias'];
-		$overridePath = $modx->aliasListing[$modx->config['site_start']]['path'];
-		// Modified by Phize
-		$o = preg_replace("#((href|action)=\"|$myDomain)($baseUrl)?($overridePath/)?$overrideAlias$furlSuffix([^\w-\.!~\*\(\)])#", '${1}' . $baseUrl . '${5}', $o);
-		
-		if ($override)
+		// Replace manual override links
+		$sql = "SELECT tvc.contentid as id, tvc.value as value FROM " . $tbl_site_tmplvars . " tv ";
+		$sql .= "INNER JOIN " . $tbl_site_tmplvar_templates . " tvtpl ON tvtpl.tmplvarid = tv.id ";
+		$sql .= "LEFT JOIN " . $tbl_site_tmplvar_contentvalues . " tvc ON tvc.tmplvarid = tv.id ";
+		$sql .= "LEFT JOIN " . $tbl_site_content . " sc ON sc.id = tvc.contentid ";
+		$sql .= "WHERE sc.published = 1 AND tvtpl.templateid = sc.template AND tv.name = '{$overrideTV}'";
+		$results = $modx->db->query($sql);
+		while ($row = $modx->db->getRow($results))
 		{
-			// Replace manual override links
-			$sql = "SELECT tvc.contentid as id, tvc.value as value FROM " . $tbl_site_tmplvars . " tv ";
-			$sql .= "INNER JOIN " . $tbl_site_tmplvar_templates . " tvtpl ON tvtpl.tmplvarid = tv.id ";
-			$sql .= "LEFT JOIN " . $tbl_site_tmplvar_contentvalues . " tvc ON tvc.tmplvarid = tv.id ";
-			$sql .= "LEFT JOIN " . $tbl_site_content . " sc ON sc.id = tvc.contentid ";
-			$sql .= "WHERE sc.published = 1 AND tvtpl.templateid = sc.template AND tv.name = '{$overrideTV}'";
-			$results = $modx->db->query($sql);
-			while ($row = $modx->db->getRow($results))
+			$overrideAlias = $modx->aliasListing[$row['id']]['alias'];
+			$overridePath = $modx->aliasListing[$row['id']]['path'];
+			switch ($row['value'])
 			{
-				$overrideAlias = $modx->aliasListing[$row['id']]['alias'];
-				$overridePath = $modx->aliasListing[$row['id']]['path'];
-				switch ($row['value'])
-				{
-					case 0:
-						// Modified by Phize
-						$o = preg_replace("#((href|action)=[\"']($baseUrl)?($overridePath/)?|$myDomain$baseUrl$overridePath/?)$overrideAlias$furlSuffix([^\w-\.!~\*\(\)])#", '${1}' . $overrideAlias . '${5}', $o);
-						break;
-					case 2:
-						// Modified by Phize
-						$o = preg_replace("#((href|action)=[\"']($baseUrl)?($overridePath/)?|$myDomain$baseUrl$overridePath/?)$overrideAlias$furlSuffix(/|([^\w-\.!~\*\(\)]))#", '${1}' . rtrim($overrideAlias, '/') . '/' . '${6}', $o);
-						break;
-				}
+				case 0:
+					// Modified by Phize
+					$o = preg_replace("#((href|action)=[\"']($baseUrl)?($overridePath/)?|$myDomain$baseUrl$overridePath/?)$overrideAlias$furlSuffix([^\w-\.!~\*\(\)])#", '${1}' . $overrideAlias . '${5}', $o);
+					break;
+				case 2:
+					// Modified by Phize
+					$o = preg_replace("#((href|action)=[\"']($baseUrl)?($overridePath/)?|$myDomain$baseUrl$overridePath/?)$overrideAlias$furlSuffix(/|([^\w-\.!~\*\(\)]))#", '${1}' . rtrim($overrideAlias, '/') . '/' . '${6}', $o);
+					break;
+			}
+		}
+	}
+	
+	if ($makeFolders)
+	{
+		if ($emptyFolders)
+		{
+			// Populate isfolder array
+			$isfolder_arr = array();
+			$result = $modx->db->select('id', $tbl_site_content, 'published > 0 AND isfolder > 0');
+			while ($row = $modx->db->getRow($result))
+			{
+				$isfolder_arr[$row['id']] = true;
 			}
 		}
 		
-		if ($makeFolders)
+		// Replace container links
+		foreach ($modx->aliasListing as $v)
 		{
-			if ($emptyFolders)
+			$id = $v['id'];
+			if ((is_array($isfolder_arr) && isset($isfolder_arr[$id])) || count($modx->getChildIds($id, 1)))
 			{
-				// Populate isfolder array
-				$isfolder_arr = array();
-				$result = $modx->db->select('id', $tbl_site_content, 'published > 0 AND isfolder > 0');
-				while ($row = $modx->db->getRow($result))
-				{
-					$isfolder_arr[$row['id']] = true;
-				}
-			}
-			
-			// Replace container links
-			foreach ($modx->aliasListing as $v)
-			{
-				$id = $v['id'];
-				if ((is_array($isfolder_arr) && isset($isfolder_arr[$id])) || count($modx->getChildIds($id, 1)))
-				{
-					$overrideAlias = $modx->aliasListing[$id]['alias'];
-					$overridePath = $modx->aliasListing[$id]['path'];
-					// Modified by Phize
-					$o = preg_replace("#((href|action)=[\"']($baseUrl)?($overridePath/)?|$myDomain$baseUrl$overridePath/?)$overrideAlias$furlSuffix(/|([^\w-\.!~\*\(\)]))#", '${1}' . rtrim($overrideAlias, '/') . '/' . '${6}', $o);
-				}
+				$overrideAlias = $modx->aliasListing[$id]['alias'];
+				$overridePath = $modx->aliasListing[$id]['path'];
+				// Modified by Phize
+				$o = preg_replace("#((href|action)=[\"']($baseUrl)?($overridePath/)?|$myDomain$baseUrl$overridePath/?)$overrideAlias$furlSuffix(/|([^\w-\.!~\*\(\)]))#", '${1}' . rtrim($overrideAlias, '/') . '/' . '${6}', $o);
 			}
 		}
 	}
